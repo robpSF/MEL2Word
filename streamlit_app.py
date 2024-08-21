@@ -4,24 +4,25 @@ import json
 import zipfile
 import io
 import fnmatch
+from datetime import datetime, timedelta
+from docx import Document
 
-# Function to format seconds into D days hh:mm:ss
-def format_seconds_to_ddhhmmss(seconds):
-    days = seconds // (24 * 3600)
-    hours = (seconds % (24 * 3600)) // 3600
-    minutes = (seconds % 3600) // 60
-    seconds = seconds % 60
+# Function to format timedelta into D days hh:mm:ss
+def format_timedelta(td):
+    days = td.days
+    hours, remainder = divmod(td.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
     return f"{days} days {hours:02d}:{minutes:02d}:{seconds:02d}"
 
 # Function to create a cumulative timing table
-def create_cumulative_timing_table(timing_info):
-    cumulative_time = 0
+def create_cumulative_timing_table(timing_info, start_time):
+    cumulative_time = start_time
     table_data = []
 
     for item in timing_info:
-        cumulative_time += item.get('timer_seconds', 0)
+        cumulative_time += timedelta(seconds=item.get('timer_seconds', 0))
         table_data.append({
-            'Cumulative Time (D days hh:mm:ss)': format_seconds_to_ddhhmmss(cumulative_time),
+            'Cumulative Time (D days hh:mm:ss)': format_timedelta(cumulative_time - start_time),
             'Subject': item.get('subject', ''),
             'Text': item.get('text', ''),
             'Inject Timing (s)': item.get('timer_seconds', 0)
@@ -29,9 +30,34 @@ def create_cumulative_timing_table(timing_info):
 
     return pd.DataFrame(table_data)
 
+# Function to save the cumulative timing table to a Word document
+def save_to_word(table, file_name):
+    doc = Document()
+    doc.add_heading('Cumulative Timing Table', 0)
+
+    table_to_word = doc.add_table(rows=1, cols=4)
+    hdr_cells = table_to_word.rows[0].cells
+    hdr_cells[0].text = 'Cumulative Time (D days hh:mm:ss)'
+    hdr_cells[1].text = 'Subject'
+    hdr_cells[2].text = 'Text'
+    hdr_cells[3].text = 'Inject Timing (s)'
+
+    for i, row in table.iterrows():
+        row_cells = table_to_word.add_row().cells
+        row_cells[0].text = row['Cumulative Time (D days hh:mm:ss)']
+        row_cells[1].text = row['Subject']
+        row_cells[2].text = row['Text']
+        row_cells[3].text = str(row['Inject Timing (s)'])
+
+    doc.save(file_name)
+
 # Streamlit app
 def main():
     st.title("Cumulative Timing Tables from .txplib File")
+
+    # Ask the user for a start time
+    start_time_input = st.text_input("Enter the start time (format: YYYY-MM-DD HH:MM:SS)", value="2024-01-01 00:00:00")
+    start_time = datetime.strptime(start_time_input, "%Y-%m-%d %H:%M:%S")
 
     # Upload the .txplib file
     uploaded_file = st.file_uploader("Choose a .txplib file", type="txplib")
@@ -84,11 +110,17 @@ def main():
                                 })
 
                         # Create the cumulative timing table
-                        cumulative_timing_table = create_cumulative_timing_table(timing_info)
+                        cumulative_timing_table = create_cumulative_timing_table(timing_info, start_time)
 
                         # Display the table for each design file
                         st.write(f"Displaying the cumulative timing table for {file_name}")
                         st.dataframe(cumulative_timing_table)
+
+                        # Provide an option to download the table as a Word document
+                        if st.button(f"Download {file_name} table as Word"):
+                            output_file_name = f"{file_name}_timing_table.docx"
+                            save_to_word(cumulative_timing_table, output_file_name)
+                            st.write(f"Word document saved as {output_file_name}.")
                 else:
                     st.error("No valid 'design *.txt' files found inside the .txplib archive.")
         except Exception as e:

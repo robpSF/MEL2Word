@@ -63,8 +63,11 @@ def main():
                         facilitator_content = get_facilitator_content(stages)
                         st.write(f"Facilitator content extracted with {len(facilitator_content)} stages.")
                         
-                        # Example of further processing or use of `facilitator_content`
-
+                        # Print each stage's subject
+                        st.write("Stages extracted in order:")
+                        for index, content in enumerate(facilitator_content):
+                            st.write(f"Stage {index + 1}: {content['subject']}")
+                        
                 else:
                     st.error("No valid 'design *.txt' files found inside the .txplib archive.")
         

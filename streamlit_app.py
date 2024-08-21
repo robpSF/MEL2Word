@@ -6,7 +6,6 @@ import io
 import fnmatch
 from datetime import datetime, timedelta
 from docx import Document
-from docx.shared import Pt
 
 # Function to format timedelta into D days hh:mm:ss
 def format_timedelta(td):
@@ -16,35 +15,29 @@ def format_timedelta(td):
     return f"{days} days {hours:02d}:{minutes:02d}:{seconds:02d}"
 
 # Function to parse text for <B> and <I> tags and apply formatting
-def parse_text(doc, text):
-    run = doc.add_paragraph().add_run()
-
+def parse_text(paragraph, text):
     while "<B>" in text or "<I>" in text:
         b_start = text.find("<B>")
         b_end = text.find("</B>")
         i_start = text.find("<I>")
         i_end = text.find("</I>")
 
-        # Handle bold text
         if b_start != -1 and (b_start < i_start or i_start == -1):
-            run.add_text(text[:b_start])
+            paragraph.add_run(text[:b_start])
             bold_text = text[b_start + 3:b_end]
+            run = paragraph.add_run(bold_text)
             run.bold = True
-            run.add_text(bold_text)
-            run.bold = None
             text = text[b_end + 4:]
-        # Handle italic text
         elif i_start != -1:
-            run.add_text(text[:i_start])
+            paragraph.add_run(text[:i_start])
             italic_text = text[i_start + 3:i_end]
+            run = paragraph.add_run(italic_text)
             run.italic = True
-            run.add_text(italic_text)
-            run.italic = None
             text = text[i_end + 4:]
+        else:
+            break
 
-    # Add remaining text
-    run.add_text(text)
-    return run
+    paragraph.add_run(text)
 
 # Function to create a cumulative timing table
 def create_cumulative_timing_table(timing_info, start_time):
@@ -69,18 +62,18 @@ def save_to_word(table):
 
     for i, row in table.iterrows():
         # Add cumulative time
-        doc.add_paragraph(f"Cumulative Time: {row['Cumulative Time (D days hh:mm:ss)']}", style='BodyText')
+        doc.add_paragraph(f"Cumulative Time: {row['Cumulative Time (D days hh:mm:ss)']}")
 
         # Add subject
-        subject_paragraph = doc.add_paragraph("Subject: ", style='BodyText')
+        subject_paragraph = doc.add_paragraph("Subject: ")
         parse_text(subject_paragraph, row['Subject'])
 
         # Add text
-        text_paragraph = doc.add_paragraph("Text: ", style='BodyText')
+        text_paragraph = doc.add_paragraph("Text: ")
         parse_text(text_paragraph, row['Text'])
 
         # Add space between entries
-        doc.add_paragraph("", style='BodyText')
+        doc.add_paragraph("")
 
     # Save to a bytes buffer instead of a file
     buffer = io.BytesIO()

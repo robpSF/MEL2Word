@@ -49,11 +49,11 @@ def parse_and_add_run(paragraph, text):
             text = text[next_tag:]
 
 # Function to create a cumulative timing table
-def create_cumulative_timing_table(timing_info, start_time):
+def create_cumulative_timing_table(facilitator_content, start_time):
     cumulative_time = start_time
     table_data = []
 
-    for item in timing_info:
+    for item in facilitator_content:
         cumulative_time += timedelta(seconds=item.get('timer_seconds', 0))
         table_data.append({
             'Cumulative Time (D days hh:mm:ss)': format_timedelta(cumulative_time - start_time),
@@ -106,7 +106,7 @@ def save_to_word(table):
     buffer.seek(0)
     return buffer
 
-# Function to retrieve facilitator content from the stages
+# Function to retrieve facilitator content from the stages with timing information
 def get_facilitator_content(stages):
     facilitator_content = []
     next_stage_id = None
@@ -114,7 +114,12 @@ def get_facilitator_content(stages):
     # Find the first stage with make_first_moderator_content = 1
     for stage in stages:
         if stage.get('make_first_moderator_content') == 1 and stage.get('channel') == 4:
-            facilitator_content.append({'subject': stage.get('subject'), 'text': stage.get('text')})
+            stage_info = {
+                'subject': stage.get('subject'),
+                'text': stage.get('text'),
+                'timer_seconds': stage.get('timer_seconds', 0)
+            }
+            facilitator_content.append(stage_info)
             next_stage_id = stage.get('single_go_on_answers', [{}])[0].get('destination_stage_id') if stage.get('question_type') == 9 else stage.get('timer_answers', [{}])[0].get('destination_stage_id')
             break
 
@@ -122,7 +127,12 @@ def get_facilitator_content(stages):
     while next_stage_id:
         for stage in stages:
             if stage.get('id') == next_stage_id:
-                facilitator_content.append({'subject': stage.get('subject'), 'text': stage.get('text')})
+                stage_info = {
+                    'subject': stage.get('subject'),
+                    'text': stage.get('text'),
+                    'timer_seconds': stage.get('timer_seconds', 0)
+                }
+                facilitator_content.append(stage_info)
                 next_stage_id = stage.get('single_go_on_answers', [{}])[0].get('destination_stage_id') if stage.get('question_type') == 9 else stage.get('timer_answers', [{}])[0].get('destination_stage_id')
                 break
         else:
@@ -169,18 +179,17 @@ def main():
                         stages = data.get('stages', [])
                         st.write(f"Number of stages found in {file_name}: {len(stages)}")
 
-                        # Get facilitator content with improved indexing
+                        # Get facilitator content with improved indexing and timing info
                         facilitator_content = get_facilitator_content(stages)
                         st.write(f"Facilitator content extracted with {len(facilitator_content)} stages.")
                         
                         # Print each stage's subject
                         st.write("Stages extracted in order:")
                         for index, content in enumerate(facilitator_content):
-                            st.write(f"Stage {index + 1}: {content['subject']}")
-
+                            st.write(f"Stage {index + 1}: {content['subject']} (Inject Timing: {content['timer_seconds']}s)")
+                        
                         # Create the cumulative timing table
-                        timing_info = [{'subject': stage['subject'], 'text': stage['text'], 'timer_seconds': 0} for stage in facilitator_content]  # Assuming timer_seconds=0 for simplicity
-                        cumulative_timing_table = create_cumulative_timing_table(timing_info, start_time)
+                        cumulative_timing_table = create_cumulative_timing_table(facilitator_content, start_time)
 
                         # Display the table for each design file
                         st.write(f"Displaying the cumulative timing table for {file_name}")

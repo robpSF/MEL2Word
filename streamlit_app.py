@@ -203,7 +203,7 @@ def main():
                         
                         # Print each stage's subject
                         #st.write("Stages extracted in order:")
-                        for index, content in enumerate(facilitator_content):
+                        #for index, content in enumerate(facilitator_content):
                             #st.write(f"Stage {index + 1}: {content['subject']} (Inject Timing: {content['timer_seconds']}s)")
                         
                         # Create the cumulative timing table

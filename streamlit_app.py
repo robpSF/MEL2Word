@@ -6,9 +6,8 @@ import io
 import fnmatch
 from datetime import datetime, timedelta
 from docx import Document
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
 
+# Function to process facilitator content
 def get_facilitator_content(stages):
     facilitator_content = []
     next_stage_id = None
@@ -40,43 +39,39 @@ def main():
     start_time = datetime.strptime(start_time_input, "%Y-%m-%d %H:%M:%S")
 
     uploaded_file = st.file_uploader("Choose a .txplib file", type="txplib")
-    
+
     if uploaded_file is not None:
         st.write("File uploaded successfully.")
         
         try:
+            # Open the uploaded .txplib file as a zip file
             with zipfile.ZipFile(io.BytesIO(uploaded_file.read()), 'r') as zip_ref:
                 st.write("Zip file opened successfully.")
                 
-                design_files = []
-                for file_name in zip_ref.namelist():
-                    st.write(f"Checking file: {file_name}")
-                    if fnmatch.fnmatch(file_name, "design *.txt"):
-                        st.write(f"Found matching design file: {file_name}")
-                        with zip_ref.open(file_name) as json_file:
-                            json_file_content = json_file.read()
-                            design_files.append((file_name, json_file_content))
-
+                design_files = [name for name in zip_ref.namelist() if fnmatch.fnmatch(name, "design *.txt")]
+                
                 if design_files:
-                    for file_name, json_file_content in design_files:
+                    for file_name in design_files:
                         st.write(f"Processing {file_name}")
-                        data = json.loads(json_file_content)
+                        
+                        with zip_ref.open(file_name) as json_file:
+                            data = json.load(json_file)
                         
                         stages = data.get('stages', [])
                         st.write(f"Number of stages found in {file_name}: {len(stages)}")
-
-                        # Call get_facilitator_content with debug info
+                        
                         facilitator_content = get_facilitator_content(stages)
                         st.write(f"Facilitator content extracted with {len(facilitator_content)} stages.")
-
+                        
                         # Example of further processing or use of `facilitator_content`
 
                 else:
                     st.error("No valid 'design *.txt' files found inside the .txplib archive.")
+        
         except zipfile.BadZipFile:
             st.error("Error: The uploaded file is not a valid zip file.")
         except Exception as e:
             st.error(f"Error processing the zip file: {e}")
-        
+
 if __name__ == "__main__":
     main()

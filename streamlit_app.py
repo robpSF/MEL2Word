@@ -49,11 +49,11 @@ def parse_and_add_run(paragraph, text):
             text = text[next_tag:]
 
 # Function to create a cumulative timing table
-def create_cumulative_timing_table(facilitator_content, start_time):
+def create_cumulative_timing_table(timing_info, start_time):
     cumulative_time = start_time
     table_data = []
 
-    for item in facilitator_content:
+    for item in timing_info:
         cumulative_time += timedelta(seconds=item.get('timer_seconds', 0))
         table_data.append({
             'Cumulative Time (D days hh:mm:ss)': format_timedelta(cumulative_time - start_time),
@@ -111,15 +111,24 @@ def get_facilitator_content(stages):
     facilitator_content = []
     next_stage_id = None
 
-    # Find the first stage with make_first_moderator_content = 1
+    # Traverse through the stages
     for stage in stages:
         if stage.get('make_first_moderator_content') == 1 and stage.get('channel') == 4:
+            # Determine the inject timing
+            timer_seconds = 0
+            if stage.get('timer_answers'):
+                for timer in stage['timer_answers']:
+                    if 'timer_seconds' in timer:
+                        timer_seconds = timer['timer_seconds']
+                        break
+
             stage_info = {
                 'subject': stage.get('subject'),
                 'text': stage.get('text'),
-                'timer_seconds': stage.get('timer_seconds', 0)
+                'timer_seconds': timer_seconds
             }
             facilitator_content.append(stage_info)
+
             next_stage_id = stage.get('single_go_on_answers', [{}])[0].get('destination_stage_id') if stage.get('question_type') == 9 else stage.get('timer_answers', [{}])[0].get('destination_stage_id')
             break
 
@@ -127,12 +136,21 @@ def get_facilitator_content(stages):
     while next_stage_id:
         for stage in stages:
             if stage.get('id') == next_stage_id:
+                # Determine the inject timing
+                timer_seconds = 0
+                if stage.get('timer_answers'):
+                    for timer in stage['timer_answers']:
+                        if 'timer_seconds' in timer:
+                            timer_seconds = timer['timer_seconds']
+                            break
+                
                 stage_info = {
                     'subject': stage.get('subject'),
                     'text': stage.get('text'),
-                    'timer_seconds': stage.get('timer_seconds', 0)
+                    'timer_seconds': timer_seconds
                 }
                 facilitator_content.append(stage_info)
+
                 next_stage_id = stage.get('single_go_on_answers', [{}])[0].get('destination_stage_id') if stage.get('question_type') == 9 else stage.get('timer_answers', [{}])[0].get('destination_stage_id')
                 break
         else:
@@ -191,7 +209,7 @@ def main():
                         # Create the cumulative timing table
                         cumulative_timing_table = create_cumulative_timing_table(facilitator_content, start_time)
 
-                        # Display the table for each design file
+                                                # Display the table for each design file
                         st.write(f"Displaying the cumulative timing table for {file_name}")
                         st.dataframe(cumulative_timing_table)
 
@@ -208,6 +226,7 @@ def main():
                     st.error("No valid 'design *.txt' files found inside the .txplib archive.")
         except Exception as e:
             st.error(f"Error processing the zip file: {e}")
-        
+
 if __name__ == "__main__":
     main()
+

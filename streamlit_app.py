@@ -6,9 +6,8 @@ import io
 import fnmatch
 from datetime import datetime, timedelta
 from docx import Document
-from docx.shared import Pt
 from docx.oxml import OxmlElement
-from docx.oxml.ns import nsdecls
+from docx.oxml.ns import qn
 
 # Function to format timedelta into D days hh:mm:ss
 def format_timedelta(td):
@@ -65,6 +64,13 @@ def create_cumulative_timing_table(timing_info, start_time):
 
     return pd.DataFrame(table_data)
 
+# Function to add shading to a cell
+def add_shading(cell, color):
+    tc_pr = cell._element.get_or_add_tcPr()
+    shd = OxmlElement('w:shd')
+    shd.set(qn('w:fill'), color)
+    tc_pr.append(shd)
+
 # Function to save the cumulative timing table to a Word document
 def save_to_word(table):
     doc = Document()
@@ -79,10 +85,7 @@ def save_to_word(table):
 
     # Add shading to header
     for cell in hdr_cells:
-        shading_elm = OxmlElement("w:shd")
-        shading_elm.set(nsdecls("w"), "fill")
-        shading_elm.set("w:fill", "D3D3D3")  # Light grey for header
-        cell._element.get_or_add_tcPr().append(shading_elm)
+        add_shading(cell, 'D3D3D3')  # Light grey for header
 
     # Add rows with alternating shading
     for i, row in table.iterrows():
@@ -95,10 +98,7 @@ def save_to_word(table):
         # Alternate row color
         if i % 2 == 0:
             for cell in row_cells:
-                shading_elm = OxmlElement("w:shd")
-                shading_elm.set(nsdecls("w"), "fill")
-                shading_elm.set("w:fill", "D3D3D3")  # Light grey
-                cell._element.get_or_add_tcPr().append(shading_elm)
+                add_shading(cell, 'D3D3D3')  # Light grey
 
     # Save to a bytes buffer instead of a file
     buffer = io.BytesIO()

@@ -13,36 +13,21 @@ def get_facilitator_content(stages):
     facilitator_content = []
     next_stage_id = None
 
-    # Debug: Print the stages to verify what's being processed
-    print("All stages:")
-    for stage in stages:
-        print(f"Stage ID: {stage.get('id')}, Subject: {stage.get('subject')}")
-
     # Find the first stage with make_first_moderator_content = 1
-    first_stage = None
-    for index, stage in enumerate(stages):
+    for stage in stages:
         if stage.get('make_first_moderator_content') == 1 and stage.get('channel') == 4:
-            first_stage = stage
-            print(f"First stage identified: {stage.get('subject')} at index {index}")
             facilitator_content.append({'subject': stage.get('subject'), 'text': stage.get('text')})
             next_stage_id = stage.get('single_go_on_answers', [{}])[0].get('destination_stage_id') if stage.get('question_type') == 9 else stage.get('timer_answers', [{}])[0].get('destination_stage_id')
             break
 
-    if first_stage is None:
-        print("Error: No starting stage found with make_first_moderator_content = 1 and channel = 4")
-
     # Traverse through the stages using the pointers
     while next_stage_id:
-        print(f"Next stage ID: {next_stage_id}")
         for stage in stages:
             if stage.get('id') == next_stage_id:
-                print(f"Processing stage: {stage.get('subject')} (ID: {stage.get('id')})")
                 facilitator_content.append({'subject': stage.get('subject'), 'text': stage.get('text')})
                 next_stage_id = stage.get('single_go_on_answers', [{}])[0].get('destination_stage_id') if stage.get('question_type') == 9 else stage.get('timer_answers', [{}])[0].get('destination_stage_id')
-                print(f"Next stage ID after processing: {next_stage_id}")
                 break
         else:
-            print(f"Error: No valid next stage found for ID {next_stage_id}, stopping sequence.")
             break
 
     return facilitator_content

@@ -11,6 +11,7 @@ from docx.oxml.ns import qn
 
 # Function to retrieve facilitator content from the stages
 def get_facilitator_content(stages):
+    st.write("START ANALYSIS")
     facilitator_content = []
     next_stage_id = None
 

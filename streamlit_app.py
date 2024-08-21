@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import zipfile
-import os
 import io
-import tempfile
 
 # Function to format seconds into hh:mm
 def format_seconds_to_hhmm(seconds):
@@ -37,55 +35,47 @@ def main():
     if uploaded_file is not None:
         # Open the uploaded .txplib file as a zip file
         with zipfile.ZipFile(io.BytesIO(uploaded_file.read()), 'r') as zip_ref:
-            # Create a temporary directory to extract files
-            with tempfile.TemporaryDirectory() as tmpdirname:
-                # Extract all files
-                zip_ref.extractall(tmpdirname)
-
-                # Find the JSON file within the extracted files
-                json_file_path = None
-                for root, dirs, files in os.walk(tmpdirname):
-                    for file in files:
-                        if file.endswith('.txt'):
-                            json_file_path = os.path.join(root, file)
-                            break
-                    if json_file_path:
+            # Find the JSON file within the zip archive without extracting
+            json_file_content = None
+            for file_name in zip_ref.namelist():
+                if file_name.endswith('.txt'):
+                    with zip_ref.open(file_name) as json_file:
+                        json_file_content = json_file.read()
                         break
 
-                # Process the JSON file if found
-                if json_file_path:
-                    with open(json_file_path, 'r') as json_file:
-                        data = json.load(json_file)
-                        
-                        # Extract the stages
-                        stages = data.get('stages', [])
+            # Process the JSON file if found
+            if json_file_content:
+                data = json.loads(json_file_content)
+                
+                # Extract the stages
+                stages = data.get('stages', [])
 
-                        # Extract potential time-related data from the stages
-                        timing_info = []
+                # Extract potential time-related data from the stages
+                timing_info = []
 
-                        for stage in stages:
-                            if 'timer_answers' in stage:
-                                for timer in stage['timer_answers']:
-                                    if 'timer_seconds' in timer and timer['timer_seconds'] > 0:
-                                        timing_info.append({
-                                            'subject': stage.get('subject', ''),
-                                            'text': stage.get('text', ''),
-                                            'timer_seconds': timer['timer_seconds']
-                                        })
-                            if 'timestamp' in stage and stage['timestamp']:
+                for stage in stages:
+                    if 'timer_answers' in stage:
+                        for timer in stage['timer_answers']:
+                            if 'timer_seconds' in timer and timer['timer_seconds'] > 0:
                                 timing_info.append({
                                     'subject': stage.get('subject', ''),
                                     'text': stage.get('text', ''),
-                                    'timestamp': stage['timestamp']
+                                    'timer_seconds': timer['timer_seconds']
                                 })
+                    if 'timestamp' in stage and stage['timestamp']:
+                        timing_info.append({
+                            'subject': stage.get('subject', ''),
+                            'text': stage.get('text', ''),
+                            'timestamp': stage['timestamp']
+                        })
 
-                        # Create the cumulative timing table
-                        cumulative_timing_table = create_cumulative_timing_table(timing_info)
+                # Create the cumulative timing table
+                cumulative_timing_table = create_cumulative_timing_table(timing_info)
 
-                        # Display the table
-                        st.dataframe(cumulative_timing_table)
-                else:
-                    st.error("No valid .txt file found inside the .txplib archive.")
+                # Display the table
+                st.dataframe(cumulative_timing_table)
+            else:
+                st.error("No valid .txt file found inside the .txplib archive.")
         
 if __name__ == "__main__":
     main()

@@ -91,7 +91,7 @@ def save_to_word(table):
 
     table_to_word = doc.add_table(rows=1, cols=4)
     hdr_cells = table_to_word.rows[0].cells
-    hdr_cells[0].text = 'Cumulative Time (D days hh:mm:ss)'
+    hdr_cells[0].text = 'Cumulative Time (hh:mm:ss)'
     hdr_cells[1].text = 'Subject'
     hdr_cells[2].text = 'Text'
     hdr_cells[3].text = 'Inject Timing (s)'
@@ -103,7 +103,7 @@ def save_to_word(table):
     # Add rows with alternating shading
     for i, row in table.iterrows():
         row_cells = table_to_word.add_row().cells
-        row_cells[0].text = row['Cumulative Time (D days hh:mm:ss)']
+        row_cells[0].text = row['Cumulative Time (hh:mm:ss)']
         parse_and_add_run(row_cells[1].paragraphs[0], row['Subject'])
         parse_and_add_run(row_cells[2].paragraphs[0], row['Text'])
         row_cells[3].text = str(row['Inject Timing (s)'])

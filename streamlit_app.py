@@ -51,12 +51,13 @@ def parse_and_add_run(paragraph, text):
 # Function to create a cumulative timing table
 def create_cumulative_timing_table(timing_info, start_time):
     cumulative_time = start_time
+    st.write(start_time)
     table_data = []
 
     for item in timing_info:
         cumulative_time += timedelta(seconds=item.get('timer_seconds', 0))
         table_data.append({
-            'Cumulative Time (D days hh:mm:ss)': format_timedelta(cumulative_time),
+            'Cumulative Time (D days hh:mm:ss)': format_timedelta(cumulative_time - start_time),
             'Subject': item.get('subject', ''),
             'Text': item.get('text', ''),
             'Inject Timing (s)': item.get('timer_seconds', 0)

@@ -49,19 +49,18 @@ def parse_and_add_run(paragraph, text):
             text = text[next_tag:]
 
 def create_cumulative_timing_table(timing_info, start_time):
-    cumulative_time = start_time
-    st.write(start_time)  # Display the start time for debugging
+    cumulative_elapsed_time = timedelta(0)  # Start with zero elapsed time
     table_data = []
 
     for item in timing_info:
-        # Add the current inject's timer_seconds to cumulative_time
-        cumulative_time += timedelta(seconds=item.get('timer_seconds', 0))
+        # Add the current inject's timer_seconds to the cumulative elapsed time
+        cumulative_elapsed_time += timedelta(seconds=item.get('timer_seconds', 0))
         
-        # Calculate the elapsed time since the start_time
-        elapsed_time = cumulative_time - start_time
+        # Calculate the cumulative time by adding elapsed time to start_time
+        cumulative_time = start_time + cumulative_elapsed_time
         
-        # Format the elapsed time as hh:mm:ss
-        formatted_time = str(elapsed_time).split('.')[0]  # Removing microseconds part
+        # Format the cumulative time as hh:mm:ss
+        formatted_time = cumulative_time.strftime('%H:%M:%S')
         
         table_data.append({
             'Cumulative Time (hh:mm:ss)': formatted_time,

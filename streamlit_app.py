@@ -175,9 +175,12 @@ def get_facilitator_content(stages):
 def main():
     st.title("MELs from .txplib File")
 
-    # Ask the user for a start time
-    start_time_input = st.text_input("Enter the start time (format: YYYY-MM-DD HH:MM:SS)", value="2024-01-01 00:00:00")
-    start_time = datetime.strptime(start_time_input, "%Y-%m-%d %H:%M:%S")
+    # Ask the user for a start time (only time, not date)
+    start_time_input = st.text_input("Enter the start time (format: HH:MM:SS)", value="00:00:00")
+    
+    # Combine the input time with a fixed date to create a full datetime object
+    fixed_date = "2024-01-01"
+    start_time = datetime.strptime(f"{fixed_date} {start_time_input}", "%Y-%m-%d %H:%M:%S")
 
     # Upload the .txplib file
     uploaded_file = st.file_uploader("Choose a .txplib file", type="txplib")

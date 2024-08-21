@@ -74,7 +74,7 @@ def add_shading(cell, color):
 # Function to save the cumulative timing table to a Word document
 def save_to_word(table):
     doc = Document()
-    doc.add_heading('Cumulative Timing Table', 0)
+    doc.add_heading('Master Events List', 0)
 
     table_to_word = doc.add_table(rows=1, cols=4)
     hdr_cells = table_to_word.rows[0].cells
@@ -160,7 +160,7 @@ def get_facilitator_content(stages):
 
 # Streamlit app
 def main():
-    st.title("Cumulative Timing Tables from .txplib File")
+    st.title("MELs from .txplib File")
 
     # Ask the user for a start time
     start_time_input = st.text_input("Enter the start time (format: YYYY-MM-DD HH:MM:SS)", value="2024-01-01 00:00:00")
@@ -210,7 +210,7 @@ def main():
                         cumulative_timing_table = create_cumulative_timing_table(facilitator_content, start_time)
 
                                                 # Display the table for each design file
-                        st.write(f"Displaying the cumulative timing table for {file_name}")
+                        st.write(f"Displaying the Master Events List for {file_name}")
                         st.dataframe(cumulative_timing_table)
 
                         # Provide an option to download the table as a Word document

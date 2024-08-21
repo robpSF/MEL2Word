@@ -182,7 +182,7 @@ def main():
                 for file_name in zip_ref.namelist():
                     st.write(f"Checking file: {file_name}")
                     if fnmatch.fnmatch(file_name, "design *.txt"):
-                        st.write(f"Found matching design file: {file_name}")
+                        #st.write(f"Found matching design file: {file_name}")
                         with zip_ref.open(file_name) as json_file:
                             json_file_content = json_file.read()
                             design_files.append((file_name, json_file_content))
@@ -190,21 +190,21 @@ def main():
                 # Process each found JSON file
                 if design_files:
                     for file_name, json_file_content in design_files:
-                        st.write(f"Processing {file_name}")
+                        #st.write(f"Processing {file_name}")
                         data = json.loads(json_file_content)
                         
                         # Extract the stages
                         stages = data.get('stages', [])
-                        st.write(f"Number of stages found in {file_name}: {len(stages)}")
+                        #st.write(f"Number of stages found in {file_name}: {len(stages)}")
 
                         # Get facilitator content with improved indexing and timing info
                         facilitator_content = get_facilitator_content(stages)
-                        st.write(f"Facilitator content extracted with {len(facilitator_content)} stages.")
+                        #st.write(f"Facilitator content extracted with {len(facilitator_content)} stages.")
                         
                         # Print each stage's subject
-                        st.write("Stages extracted in order:")
+                        #st.write("Stages extracted in order:")
                         for index, content in enumerate(facilitator_content):
-                            st.write(f"Stage {index + 1}: {content['subject']} (Inject Timing: {content['timer_seconds']}s)")
+                            #st.write(f"Stage {index + 1}: {content['subject']} (Inject Timing: {content['timer_seconds']}s)")
                         
                         # Create the cumulative timing table
                         cumulative_timing_table = create_cumulative_timing_table(facilitator_content, start_time)

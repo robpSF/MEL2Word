@@ -57,15 +57,16 @@ def create_cumulative_timing_table(timing_info, start_time):
         # Add the current inject's timer_seconds to cumulative_time
         cumulative_time += timedelta(seconds=item.get('timer_seconds', 0))
         
-        # Record the current cumulative_time as it is, without subtracting start_time
+        # Record the current cumulative_time relative to the start_time
         table_data.append({
-            'Cumulative Time (D days hh:mm:ss)': format_timedelta(cumulative_time - datetime(1970, 1, 1)),  # Direct cumulative time
+            'Cumulative Time (D days hh:mm:ss)': cumulative_time.strftime('%Y-%m-%d %H:%M:%S'),  # Direct cumulative time as datetime string
             'Subject': item.get('subject', ''),
             'Text': item.get('text', ''),
             'Inject Timing (s)': item.get('timer_seconds', 0)
         })
 
     return pd.DataFrame(table_data)
+
 
 
 

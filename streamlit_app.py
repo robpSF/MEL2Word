@@ -214,10 +214,10 @@ def main():
                         st.dataframe(cumulative_timing_table)
 
                         # Provide an option to download the table as a Word document
-                        if st.button(f"Download {file_name} table as Word"):
+                        if st.button(f"Prepare table for Word"):
                             word_buffer = save_to_word(cumulative_timing_table)
                             st.download_button(
-                                label=f"Download {file_name} table as Word",
+                                label=f"Download Word file",
                                 data=word_buffer,
                                 file_name=f"{file_name}_timing_table.docx",
                                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"

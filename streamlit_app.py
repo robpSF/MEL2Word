@@ -33,49 +33,62 @@ def main():
     uploaded_file = st.file_uploader("Choose a .txplib file", type="txplib")
     
     if uploaded_file is not None:
+        st.write("File uploaded successfully.")
+        
         # Open the uploaded .txplib file as a zip file
-        with zipfile.ZipFile(io.BytesIO(uploaded_file.read()), 'r') as zip_ref:
-            # Find the JSON file within the zip archive without extracting
-            json_file_content = None
-            for file_name in zip_ref.namelist():
-                if file_name.endswith('.txt'):
-                    with zip_ref.open(file_name) as json_file:
-                        json_file_content = json_file.read()
-                        break
-
-            # Process the JSON file if found
-            if json_file_content:
-                data = json.loads(json_file_content)
+        try:
+            with zipfile.ZipFile(io.BytesIO(uploaded_file.read()), 'r') as zip_ref:
+                st.write("Zip file opened successfully.")
                 
-                # Extract the stages
-                stages = data.get('stages', [])
+                # Find the JSON file within the zip archive without extracting
+                json_file_content = None
+                for file_name in zip_ref.namelist():
+                    st.write(f"Checking file: {file_name}")
+                    if file_name.endswith('.txt'):
+                        st.write(f"Found .txt file: {file_name}")
+                        with zip_ref.open(file_name) as json_file:
+                            json_file_content = json_file.read()
+                            st.write("JSON file content read successfully.")
+                            break
 
-                # Extract potential time-related data from the stages
-                timing_info = []
+                # Process the JSON file if found
+                if json_file_content:
+                    st.write("Processing JSON content.")
+                    data = json.loads(json_file_content)
+                    
+                    # Extract the stages
+                    stages = data.get('stages', [])
+                    st.write(f"Number of stages found: {len(stages)}")
 
-                for stage in stages:
-                    if 'timer_answers' in stage:
-                        for timer in stage['timer_answers']:
-                            if 'timer_seconds' in timer and timer['timer_seconds'] > 0:
-                                timing_info.append({
-                                    'subject': stage.get('subject', ''),
-                                    'text': stage.get('text', ''),
-                                    'timer_seconds': timer['timer_seconds']
-                                })
-                    if 'timestamp' in stage and stage['timestamp']:
-                        timing_info.append({
-                            'subject': stage.get('subject', ''),
-                            'text': stage.get('text', ''),
-                            'timestamp': stage['timestamp']
-                        })
+                    # Extract potential time-related data from the stages
+                    timing_info = []
 
-                # Create the cumulative timing table
-                cumulative_timing_table = create_cumulative_timing_table(timing_info)
+                    for stage in stages:
+                        if 'timer_answers' in stage:
+                            for timer in stage['timer_answers']:
+                                if 'timer_seconds' in timer and timer['timer_seconds'] > 0:
+                                    timing_info.append({
+                                        'subject': stage.get('subject', ''),
+                                        'text': stage.get('text', ''),
+                                        'timer_seconds': timer['timer_seconds']
+                                    })
+                        if 'timestamp' in stage and stage['timestamp']:
+                            timing_info.append({
+                                'subject': stage.get('subject', ''),
+                                'text': stage.get('text', ''),
+                                'timestamp': stage['timestamp']
+                            })
 
-                # Display the table
-                st.dataframe(cumulative_timing_table)
-            else:
-                st.error("No valid .txt file found inside the .txplib archive.")
+                    # Create the cumulative timing table
+                    cumulative_timing_table = create_cumulative_timing_table(timing_info)
+
+                    # Display the table
+                    st.write("Displaying the cumulative timing table.")
+                    st.dataframe(cumulative_timing_table)
+                else:
+                    st.error("No valid .txt file found inside the .txplib archive.")
+        except Exception as e:
+            st.error(f"Error processing the zip file: {e}")
         
 if __name__ == "__main__":
     main()

@@ -48,31 +48,29 @@ def parse_and_add_run(paragraph, text):
             paragraph.add_run(text[:next_tag])
             text = text[next_tag:]
 
-# Function to create a cumulative timing table
-def format_timedelta(td):
-    total_seconds = td.total_seconds()
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"0 days {int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
-
-def create_cumulative_timing_table(timing_info, start_time):
-    cumulative_time = start_time
-    st.write(start_time)  # Display the start time for debugging
+def create_cumulative_timing_table(facilitator_content, start_time):
+    cumulative_time = timedelta()  # Start with 0 for cumulative time
     table_data = []
 
-    for item in timing_info:
+    for item in facilitator_content:
         # Add the current inject's timer_seconds to cumulative_time
         cumulative_time += timedelta(seconds=item.get('timer_seconds', 0))
         
-        # Record the cumulative time and format it to ensure days start from 0
+        # Format the cumulative time, ensuring days always start from 0
         table_data.append({
-            'Cumulative Time (D days hh:mm:ss)': format_timedelta(cumulative_time - start_time),
+            'Cumulative Time (D days hh:mm:ss)': format_timedelta(cumulative_time),
             'Subject': item.get('subject', ''),
             'Text': item.get('text', ''),
             'Inject Timing (s)': item.get('timer_seconds', 0)
         })
 
     return pd.DataFrame(table_data)
+
+def format_timedelta(td):
+    hours, remainder = divmod(td.total_seconds(), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"0 days {int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
+
 
 
 

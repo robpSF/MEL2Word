@@ -5,10 +5,13 @@ import zipfile
 import io
 import fnmatch
 
-# Function to format seconds into hh:mm
-def format_seconds_to_hhmm(seconds):
-    minutes = seconds // 60
-    return f"{minutes:02d}:{seconds % 60:02d}"
+# Function to format seconds into D days hh:mm:ss
+def format_seconds_to_ddhhmmss(seconds):
+    days = seconds // (24 * 3600)
+    hours = (seconds % (24 * 3600)) // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = seconds % 60
+    return f"{days} days {hours:02d}:{minutes:02d}:{seconds:02d}"
 
 # Function to create a cumulative timing table
 def create_cumulative_timing_table(timing_info):
@@ -18,7 +21,7 @@ def create_cumulative_timing_table(timing_info):
     for item in timing_info:
         cumulative_time += item.get('timer_seconds', 0)
         table_data.append({
-            'Cumulative Time (hh:mm)': format_seconds_to_hhmm(cumulative_time),
+            'Cumulative Time (D days hh:mm:ss)': format_seconds_to_ddhhmmss(cumulative_time),
             'Subject': item.get('subject', ''),
             'Text': item.get('text', ''),
             'Inject Timing (s)': item.get('timer_seconds', 0)

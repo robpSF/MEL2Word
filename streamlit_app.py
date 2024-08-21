@@ -6,6 +6,9 @@ import io
 import fnmatch
 from datetime import datetime, timedelta
 from docx import Document
+from docx.shared import Pt
+from docx.oxml import OxmlElement
+from docx.oxml.ns import nsdecls
 
 # Function to format timedelta into D days hh:mm:ss
 def format_timedelta(td):
@@ -74,17 +77,28 @@ def save_to_word(table):
     hdr_cells[2].text = 'Text'
     hdr_cells[3].text = 'Inject Timing (s)'
 
+    # Add shading to header
+    for cell in hdr_cells:
+        shading_elm = OxmlElement("w:shd")
+        shading_elm.set(nsdecls("w"), "fill")
+        shading_elm.set("w:fill", "D3D3D3")  # Light grey for header
+        cell._element.get_or_add_tcPr().append(shading_elm)
+
+    # Add rows with alternating shading
     for i, row in table.iterrows():
         row_cells = table_to_word.add_row().cells
         row_cells[0].text = row['Cumulative Time (D days hh:mm:ss)']
-
-        # Format the Subject with bold and italic tags
         parse_and_add_run(row_cells[1].paragraphs[0], row['Subject'])
-
-        # Format the Text with bold and italic tags
         parse_and_add_run(row_cells[2].paragraphs[0], row['Text'])
-
         row_cells[3].text = str(row['Inject Timing (s)'])
+
+        # Alternate row color
+        if i % 2 == 0:
+            for cell in row_cells:
+                shading_elm = OxmlElement("w:shd")
+                shading_elm.set(nsdecls("w"), "fill")
+                shading_elm.set("w:fill", "D3D3D3")  # Light grey
+                cell._element.get_or_add_tcPr().append(shading_elm)
 
     # Save to a bytes buffer instead of a file
     buffer = io.BytesIO()

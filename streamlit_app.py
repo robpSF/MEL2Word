@@ -57,17 +57,14 @@ def create_cumulative_timing_table(timing_info, start_time):
         # Add the current inject's timer_seconds to cumulative_time
         cumulative_time += timedelta(seconds=item.get('timer_seconds', 0))
         
-        # Calculate the elapsed time since the start_time as a timedelta
+        # Calculate the elapsed time since the start_time
         elapsed_time = cumulative_time - start_time
         
         # Format the elapsed time as hh:mm:ss
-        hours, remainder = divmod(elapsed_time.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        formatted_time = f"{hours:02}:{minutes:02}:{seconds:02}"
+        formatted_time = str(elapsed_time).split('.')[0]  # Removing microseconds part
         
-        # Record the current cumulative_time as hh:mm:ss
         table_data.append({
-            'Cumulative Time (hh:mm:ss)': formatted_time,  # Display cumulative time in hh:mm:ss
+            'Cumulative Time (hh:mm:ss)': formatted_time,
             'Subject': item.get('subject', ''),
             'Text': item.get('text', ''),
             'Inject Timing (s)': item.get('timer_seconds', 0)

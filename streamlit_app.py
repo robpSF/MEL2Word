@@ -175,12 +175,12 @@ def main():
         # Open the uploaded .txplib file as a zip file
         try:
             with zipfile.ZipFile(io.BytesIO(uploaded_file.read()), 'r') as zip_ref:
-                st.write("Zip file opened successfully.")
+                st.write("Library file opened successfully.")
                 
                 # Find all the JSON files within the zip archive matching "design *.txt"
                 design_files = []
                 for file_name in zip_ref.namelist():
-                    st.write(f"Checking file: {file_name}")
+                    #st.write(f"Checking file: {file_name}")
                     if fnmatch.fnmatch(file_name, "design *.txt"):
                         #st.write(f"Found matching design file: {file_name}")
                         with zip_ref.open(file_name) as json_file:
@@ -225,7 +225,7 @@ def main():
                 else:
                     st.error("No valid 'design *.txt' files found inside the .txplib archive.")
         except Exception as e:
-            st.error(f"Error processing the zip file: {e}")
+            st.error(f"Error processing the file: {e}")
 
 if __name__ == "__main__":
     main()

@@ -219,7 +219,7 @@ def main():
                             st.download_button(
                                 label=f"Download Word file",
                                 data=word_buffer,
-                                file_name=f"{uploaded_file.name}_timing_table.docx",
+                                file_name=f"{uploaded_file.name}_MEL.docx",
                                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                             )
                 else:

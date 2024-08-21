@@ -31,7 +31,7 @@ def create_cumulative_timing_table(timing_info, start_time):
     return pd.DataFrame(table_data)
 
 # Function to save the cumulative timing table to a Word document
-def save_to_word(table, file_name):
+def save_to_word(table):
     doc = Document()
     doc.add_heading('Cumulative Timing Table', 0)
 
@@ -49,7 +49,11 @@ def save_to_word(table, file_name):
         row_cells[2].text = row['Text']
         row_cells[3].text = str(row['Inject Timing (s)'])
 
-    doc.save(file_name)
+    # Save to a bytes buffer instead of a file
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
 
 # Streamlit app
 def main():
@@ -118,9 +122,13 @@ def main():
 
                         # Provide an option to download the table as a Word document
                         if st.button(f"Download {file_name} table as Word"):
-                            output_file_name = f"{file_name}_timing_table.docx"
-                            save_to_word(cumulative_timing_table, output_file_name)
-                            st.write(f"Word document saved as {output_file_name}.")
+                            word_buffer = save_to_word(cumulative_timing_table)
+                            st.download_button(
+                                label=f"Download {file_name} table as Word",
+                                data=word_buffer,
+                                file_name=f"{file_name}_timing_table.docx",
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            )
                 else:
                     st.error("No valid 'design *.txt' files found inside the .txplib archive.")
         except Exception as e:

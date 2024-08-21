@@ -6,6 +6,7 @@ import io
 import fnmatch
 from datetime import datetime, timedelta
 from docx import Document
+from docx.shared import Pt
 
 # Function to format timedelta into D days hh:mm:ss
 def format_timedelta(td):
@@ -13,6 +14,37 @@ def format_timedelta(td):
     hours, remainder = divmod(td.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{days} days {hours:02d}:{minutes:02d}:{seconds:02d}"
+
+# Function to parse text for <B> and <I> tags and apply formatting
+def parse_text(doc, text):
+    run = doc.add_paragraph().add_run()
+
+    while "<B>" in text or "<I>" in text:
+        b_start = text.find("<B>")
+        b_end = text.find("</B>")
+        i_start = text.find("<I>")
+        i_end = text.find("</I>")
+
+        # Handle bold text
+        if b_start != -1 and (b_start < i_start or i_start == -1):
+            run.add_text(text[:b_start])
+            bold_text = text[b_start + 3:b_end]
+            run.bold = True
+            run.add_text(bold_text)
+            run.bold = None
+            text = text[b_end + 4:]
+        # Handle italic text
+        elif i_start != -1:
+            run.add_text(text[:i_start])
+            italic_text = text[i_start + 3:i_end]
+            run.italic = True
+            run.add_text(italic_text)
+            run.italic = None
+            text = text[i_end + 4:]
+
+    # Add remaining text
+    run.add_text(text)
+    return run
 
 # Function to create a cumulative timing table
 def create_cumulative_timing_table(timing_info, start_time):
@@ -35,19 +67,20 @@ def save_to_word(table):
     doc = Document()
     doc.add_heading('Cumulative Timing Table', 0)
 
-    table_to_word = doc.add_table(rows=1, cols=4)
-    hdr_cells = table_to_word.rows[0].cells
-    hdr_cells[0].text = 'Cumulative Time (D days hh:mm:ss)'
-    hdr_cells[1].text = 'Subject'
-    hdr_cells[2].text = 'Text'
-    hdr_cells[3].text = 'Inject Timing (s)'
-
     for i, row in table.iterrows():
-        row_cells = table_to_word.add_row().cells
-        row_cells[0].text = row['Cumulative Time (D days hh:mm:ss)']
-        row_cells[1].text = row['Subject']
-        row_cells[2].text = row['Text']
-        row_cells[3].text = str(row['Inject Timing (s)'])
+        # Add cumulative time
+        doc.add_paragraph(f"Cumulative Time: {row['Cumulative Time (D days hh:mm:ss)']}", style='BodyText')
+
+        # Add subject
+        subject_paragraph = doc.add_paragraph("Subject: ", style='BodyText')
+        parse_text(subject_paragraph, row['Subject'])
+
+        # Add text
+        text_paragraph = doc.add_paragraph("Text: ", style='BodyText')
+        parse_text(text_paragraph, row['Text'])
+
+        # Add space between entries
+        doc.add_paragraph("", style='BodyText')
 
     # Save to a bytes buffer instead of a file
     buffer = io.BytesIO()

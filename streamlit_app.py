@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import zipfile
 import io
+import fnmatch
 
 # Function to format seconds into hh:mm
 def format_seconds_to_hhmm(seconds):
@@ -40,12 +41,12 @@ def main():
             with zipfile.ZipFile(io.BytesIO(uploaded_file.read()), 'r') as zip_ref:
                 st.write("Zip file opened successfully.")
                 
-                # Find the JSON file within the zip archive without extracting
+                # Find the JSON file within the zip archive matching "design *.txt"
                 json_file_content = None
                 for file_name in zip_ref.namelist():
                     st.write(f"Checking file: {file_name}")
-                    if file_name.endswith('.txt'):
-                        st.write(f"Found .txt file: {file_name}")
+                    if fnmatch.fnmatch(file_name, "design *.txt"):
+                        st.write(f"Found matching design file: {file_name}")
                         with zip_ref.open(file_name) as json_file:
                             json_file_content = json_file.read()
                             st.write("JSON file content read successfully.")
@@ -86,7 +87,7 @@ def main():
                     st.write("Displaying the cumulative timing table.")
                     st.dataframe(cumulative_timing_table)
                 else:
-                    st.error("No valid .txt file found inside the .txplib archive.")
+                    st.error("No valid 'design *.txt' file found inside the .txplib archive.")
         except Exception as e:
             st.error(f"Error processing the zip file: {e}")
         

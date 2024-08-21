@@ -14,30 +14,37 @@ def format_timedelta(td):
     minutes, seconds = divmod(remainder, 60)
     return f"{days} days {hours:02d}:{minutes:02d}:{seconds:02d}"
 
-# Function to parse text for <B> and <I> tags and apply formatting
-def parse_text(paragraph, text):
-    while "<B>" in text or "<I>" in text:
-        b_start = text.find("<B>")
-        b_end = text.find("</B>")
-        i_start = text.find("<I>")
-        i_end = text.find("</I>")
-
-        if b_start != -1 and (b_start < i_start or i_start == -1):
-            paragraph.add_run(text[:b_start])
-            bold_text = text[b_start + 3:b_end]
-            run = paragraph.add_run(bold_text)
-            run.bold = True
-            text = text[b_end + 4:]
-        elif i_start != -1:
-            paragraph.add_run(text[:i_start])
-            italic_text = text[i_start + 3:i_end]
-            run = paragraph.add_run(italic_text)
-            run.italic = True
-            text = text[i_end + 4:]
+# Function to parse and format text with <B> and <I> tags
+def parse_and_add_run(paragraph, text):
+    while text:
+        if text.startswith("<B>"):
+            text = text[3:]  # Remove the <B> tag
+            end_index = text.find("</B>")
+            if end_index != -1:
+                paragraph.add_run(text[:end_index]).bold = True
+                text = text[end_index + 4:]  # Remove the </B> tag
+            else:
+                paragraph.add_run(text).bold = True
+                break
+        elif text.startswith("<I>"):
+            text = text[3:]  # Remove the <I> tag
+            end_index = text.find("</I>")
+            if end_index != -1:
+                paragraph.add_run(text[:end_index]).italic = True
+                text = text[end_index + 4:]  # Remove the </I> tag
+            else:
+                paragraph.add_run(text).italic = True
+                break
         else:
-            break
-
-    paragraph.add_run(text)
+            next_tag = min(
+                (text.find("<B>"), text.find("<I>")),
+                key=lambda x: (x == -1, x)  # Find the next tag or end
+            )
+            if next_tag == -1:
+                paragraph.add_run(text)
+                break
+            paragraph.add_run(text[:next_tag])
+            text = text[next_tag:]
 
 # Function to create a cumulative timing table
 def create_cumulative_timing_table(timing_info, start_time):
@@ -60,20 +67,24 @@ def save_to_word(table):
     doc = Document()
     doc.add_heading('Cumulative Timing Table', 0)
 
+    table_to_word = doc.add_table(rows=1, cols=4)
+    hdr_cells = table_to_word.rows[0].cells
+    hdr_cells[0].text = 'Cumulative Time (D days hh:mm:ss)'
+    hdr_cells[1].text = 'Subject'
+    hdr_cells[2].text = 'Text'
+    hdr_cells[3].text = 'Inject Timing (s)'
+
     for i, row in table.iterrows():
-        # Add cumulative time
-        doc.add_paragraph(f"Cumulative Time: {row['Cumulative Time (D days hh:mm:ss)']}")
+        row_cells = table_to_word.add_row().cells
+        row_cells[0].text = row['Cumulative Time (D days hh:mm:ss)']
 
-        # Add subject
-        subject_paragraph = doc.add_paragraph("Subject: ")
-        parse_text(subject_paragraph, row['Subject'])
+        # Format the Subject with bold and italic tags
+        parse_and_add_run(row_cells[1].paragraphs[0], row['Subject'])
 
-        # Add text
-        text_paragraph = doc.add_paragraph("Text: ")
-        parse_text(text_paragraph, row['Text'])
+        # Format the Text with bold and italic tags
+        parse_and_add_run(row_cells[2].paragraphs[0], row['Text'])
 
-        # Add space between entries
-        doc.add_paragraph("")
+        row_cells[3].text = str(row['Inject Timing (s)'])
 
     # Save to a bytes buffer instead of a file
     buffer = io.BytesIO()

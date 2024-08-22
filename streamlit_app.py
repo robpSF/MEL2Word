@@ -61,9 +61,7 @@ def create_cumulative_timing_table(timing_info, start_time):
         
         # Format the cumulative time as hh:mm:ss
         formatted_time = cumulative_time.strftime('%H:%M:%S')
-        
-        st.write(item)
-                 
+                      
         
         table_data.append({
             'Cumulative Time (hh:mm:ss)': formatted_time,
@@ -223,8 +221,9 @@ def main():
                         # Print each stage's subject
                         #st.write("Stages extracted in order:")
                         for index, content in enumerate(facilitator_content):
-                            #st.write(f"Stage {index + 1}: {content['subject']} (Inject Timing: {content['timer_seconds']}s)")
                             st.write(content)
+                            #st.write(f"Stage {index + 1}: {content['subject']} (Inject Timing: {content['timer_seconds']}s)")
+                            
                         
                         # Create the cumulative timing table
                         cumulative_timing_table = create_cumulative_timing_table(facilitator_content, start_time)

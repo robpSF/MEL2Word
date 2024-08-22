@@ -135,7 +135,7 @@ def get_facilitator_content(stages):
                     if 'timer_seconds' in timer:
                         timer_seconds = timer['timer_seconds']
                         break
-
+            st.write(stage)
             stage_info = {
                 'subject': stage.get('subject'),
                 'text': stage.get('text'),
@@ -220,8 +220,7 @@ def main():
                         
                         # Print each stage's subject
                         #st.write("Stages extracted in order:")
-                        for index, content in enumerate(facilitator_content):
-                            st.write(content)
+                        #for index, content in enumerate(facilitator_content):
                             #st.write(f"Stage {index + 1}: {content['subject']} (Inject Timing: {content['timer_seconds']}s)")
                             
                         

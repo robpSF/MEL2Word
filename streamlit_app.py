@@ -62,8 +62,8 @@ def create_cumulative_timing_table(timing_info, start_time):
         # Format the cumulative time as hh:mm:ss
         formatted_time = cumulative_time.strftime('%H:%M:%S')
         
-        st.write(item.get('subject', '')
-        st.write(item.get('index', '')
+        st.write(item.get('subject', ''))
+        st.write(item.get('index', ''))
                  
         
         table_data.append({

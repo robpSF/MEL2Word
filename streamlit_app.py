@@ -9,12 +9,12 @@ from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-# Function to format timedelta into D days hh:mm:ss
+# Function to format timedelta into hh:mm:ss
 def format_timedelta(td):
     days = td.days
     hours, remainder = divmod(td.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
-    return f"{days} days {hours:02d}:{minutes:02d}:{seconds:02d}"
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 # Function to parse and format text with <B> and <I> tags
 def parse_and_add_run(paragraph, text):
@@ -48,19 +48,15 @@ def parse_and_add_run(paragraph, text):
             paragraph.add_run(text[:next_tag])
             text = text[next_tag:]
 
-def create_cumulative_timing_table(timing_info, start_time):
+# Function to create a cumulative timing table
+def create_cumulative_timing_table(facilitator_content, start_time):
     cumulative_elapsed_time = timedelta(0)  # Start with zero elapsed time
     table_data = []
 
-    for item in timing_info:
-        # Add the current inject's timer_seconds to the cumulative elapsed time
+    for i, item in enumerate(facilitator_content):
         cumulative_elapsed_time += timedelta(seconds=item.get('timer_seconds', 0))
-        
-        # Calculate the cumulative time by adding elapsed time to start_time
         cumulative_time = start_time + cumulative_elapsed_time
-        
-        # Format the cumulative time as hh:mm:ss
-        formatted_time = cumulative_time.strftime('%H:%M:%S')
+        formatted_time = format_timedelta(cumulative_elapsed_time)  # Format as hh:mm:ss
         
         table_data.append({
             'Cumulative Time (hh:mm:ss)': formatted_time,
@@ -71,12 +67,6 @@ def create_cumulative_timing_table(timing_info, start_time):
 
     return pd.DataFrame(table_data)
 
-
-
-
-
-
-
 # Function to add shading to a cell
 def add_shading(cell, color):
     tc_pr = cell._element.get_or_add_tcPr()
@@ -85,9 +75,9 @@ def add_shading(cell, color):
     tc_pr.append(shd)
 
 # Function to save the cumulative timing table to a Word document
-def save_to_word(table):
+def save_to_word(table, mel_name):
     doc = Document()
-    doc.add_heading('Master Events List', 0)
+    doc.add_heading(f'Cumulative Timing Table for {mel_name}', 0)
 
     table_to_word = doc.add_table(rows=1, cols=4)
     hdr_cells = table_to_word.rows[0].cells
@@ -108,25 +98,21 @@ def save_to_word(table):
         parse_and_add_run(row_cells[2].paragraphs[0], row['Text'])
         row_cells[3].text = str(row['Inject Timing (s)'])
 
-        # Alternate row color
         if i % 2 == 0:
             for cell in row_cells:
                 add_shading(cell, 'D3D3D3')  # Light grey
 
-    # Save to a bytes buffer instead of a file
     buffer = io.BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     return buffer
 
-# Function to retrieve facilitator content from the stages with timing information
-def get_facilitator_content(stages):
+# Function to retrieve facilitator content for each MEL
+def get_facilitator_content_for_mel(stages, mel_id):
     facilitator_content = []
-    next_stage_id = None
 
-    # Traverse through the stages
     for stage in stages:
-        if stage.get('make_first_moderator_content') == 1 and stage.get('channel') == 4:
+        if stage.get('mel_id') == mel_id:
             # Determine the inject timing
             timer_seconds = 0
             if stage.get('timer_answers'):
@@ -142,45 +128,15 @@ def get_facilitator_content(stages):
             }
             facilitator_content.append(stage_info)
 
-            next_stage_id = stage.get('single_go_on_answers', [{}])[0].get('destination_stage_id') if stage.get('question_type') == 9 else stage.get('timer_answers', [{}])[0].get('destination_stage_id')
-            break
-
-    # Traverse through the stages using the pointers
-    while next_stage_id:
-        for stage in stages:
-            if stage.get('id') == next_stage_id:
-                # Determine the inject timing
-                timer_seconds = 0
-                if stage.get('timer_answers'):
-                    for timer in stage['timer_answers']:
-                        if 'timer_seconds' in timer:
-                            timer_seconds = timer['timer_seconds']
-                            break
-                
-                stage_info = {
-                    'subject': stage.get('subject'),
-                    'text': stage.get('text'),
-                    'timer_seconds': timer_seconds
-                }
-                facilitator_content.append(stage_info)
-
-                next_stage_id = stage.get('single_go_on_answers', [{}])[0].get('destination_stage_id') if stage.get('question_type') == 9 else stage.get('timer_answers', [{}])[0].get('destination_stage_id')
-                break
-        else:
-            break
-
     return facilitator_content
 
 # Streamlit app
 def main():
-    st.title("MELs from .txplib File")
+    st.title("Cumulative Timing Tables from .txplib File")
 
-    # Ask the user for a start time (only time, not date)
+    # Ask the user for a start time
     start_time_input = st.text_input("Enter the start time (format: HH:MM:SS)", value="00:00:00")
-    
-    # Combine the input time with a fixed date to create a full datetime object
-    fixed_date = "2024-01-01"
-    start_time = datetime.strptime(f"{fixed_date} {start_time_input}", "%Y-%m-%d %H:%M:%S")
+    start_time = datetime.strptime(f"2024-01-01 {start_time_input}", "%Y-%m-%d %H:%M:%S")
 
     # Upload the .txplib file
     uploaded_file = st.file_uploader("Choose a .txplib file", type="txplib")
@@ -188,61 +144,47 @@ def main():
     if uploaded_file is not None:
         st.write("File uploaded successfully.")
         
-        # Open the uploaded .txplib file as a zip file
         try:
             with zipfile.ZipFile(io.BytesIO(uploaded_file.read()), 'r') as zip_ref:
-                st.write("Library file opened successfully.")
+                st.write("Zip file opened successfully.")
                 
-                # Find all the JSON files within the zip archive matching "design *.txt"
                 design_files = []
                 for file_name in zip_ref.namelist():
-                    #st.write(f"Checking file: {file_name}")
                     if fnmatch.fnmatch(file_name, "design *.txt"):
-                        #st.write(f"Found matching design file: {file_name}")
+                        st.write(f"Found matching design file: {file_name}")
                         with zip_ref.open(file_name) as json_file:
                             json_file_content = json_file.read()
                             design_files.append((file_name, json_file_content))
 
-                # Process each found JSON file
                 if design_files:
                     for file_name, json_file_content in design_files:
-                        #st.write(f"Processing {file_name}")
                         data = json.loads(json_file_content)
-                        
-                        # Extract the stages
                         stages = data.get('stages', [])
-                        #st.write(f"Number of stages found in {file_name}: {len(stages)}")
+                        mels = data.get('mels', [])
 
-                        # Get facilitator content with improved indexing and timing info
-                        facilitator_content = get_facilitator_content(stages)
-                        #st.write(f"Facilitator content extracted with {len(facilitator_content)} stages.")
-                        
-                        # Print each stage's subject
-                        #st.write("Stages extracted in order:")
-                        #for index, content in enumerate(facilitator_content):
-                            #st.write(f"Stage {index + 1}: {content['subject']} (Inject Timing: {content['timer_seconds']}s)")
-                        
-                        # Create the cumulative timing table
-                        cumulative_timing_table = create_cumulative_timing_table(facilitator_content, start_time)
+                        for mel in mels:
+                            mel_id = mel['id']
+                            mel_name = mel['name']
+                            st.write(f"Processing MEL: {mel_name}")
 
-                                                # Display the table for each design file
-                        st.write(f"Displaying the Master Events List for {file_name}")
-                        st.dataframe(cumulative_timing_table)
+                            facilitator_content = get_facilitator_content_for_mel(stages, mel_id)
+                            cumulative_timing_table = create_cumulative_timing_table(facilitator_content, start_time)
 
-                        # Provide an option to download the table as a Word document
-                        if st.button(f"Prepare table for Word"):
-                            word_buffer = save_to_word(cumulative_timing_table)
-                            st.download_button(
-                                label=f"Download Word file",
-                                data=word_buffer,
-                                file_name=f"{uploaded_file.name}_MEL.docx",
-                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                            )
+                            st.write(f"Displaying the cumulative timing table for {mel_name}")
+                            st.dataframe(cumulative_timing_table)
+
+                            if st.button(f"Download {mel_name} table as Word"):
+                                word_buffer = save_to_word(cumulative_timing_table, mel_name)
+                                st.download_button(
+                                    label=f"Download {mel_name} table as Word",
+                                    data=word_buffer,
+                                    file_name=f"{mel_name}_timing_table.docx",
+                                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                )
                 else:
                     st.error("No valid 'design *.txt' files found inside the .txplib archive.")
         except Exception as e:
-            st.error(f"Error processing the file: {e}")
+            st.error(f"Error processing the zip file: {e}")
 
 if __name__ == "__main__":
     main()
-

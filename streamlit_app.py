@@ -112,7 +112,10 @@ def get_facilitator_content_for_mel(stages, mel_id):
     facilitator_content = []
 
     for stage in stages:
-        if stage.get('mel_id') == mel_id:
+        # Debugging: Print each stage's mel_id and the target mel_id
+        st.write(f"Checking stage {stage.get('id')} with mel_id: {stage.get('mel_id')} against target mel_id: {mel_id}")
+        
+        if str(stage.get('mel_id')) == str(mel_id):  # Ensure both are compared as strings
             # Determine the inject timing
             timer_seconds = 0
             if stage.get('timer_answers'):
@@ -128,7 +131,11 @@ def get_facilitator_content_for_mel(stages, mel_id):
             }
             facilitator_content.append(stage_info)
 
+    # Debugging: Check if any stages were added
+    st.write(f"Facilitator content for MEL ID {mel_id}: {len(facilitator_content)} stages found")
+
     return facilitator_content
+
 
 # Streamlit app
 def main():
